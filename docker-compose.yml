@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - 6500:5432
+    environment:
+      POSTGRES_DB: fit_attendance
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+  app:
+    container_name: fit-attendance-app
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
