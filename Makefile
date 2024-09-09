@@ -7,7 +7,11 @@ DB_NAME=fit_attendance
 
 build:
 	@echo "Building..."
-	@npm install
+	@docker-compose run --rm --no-deps ${WEB_DOCKER_SERVICE} npm install
+
+build-no-cache:
+	@docker-compose build --no-cache --pull
+	@docker-compose run --rm --no-deps ${WEB_DOCKER_SERVICE} npm install
 
 up:
 	@echo "Running server on ${PORT}..."
@@ -19,3 +23,9 @@ down:
 
 db-shell:
 	@docker-compose exec ${DB_DOCKER_SERVICE} psql -U ${DB_USER} -d ${DB_NAME}
+
+shell:
+	@docker-compose exec ${WEB_DOCKER_SERVICE} sh
+
+add-dependency:
+	@docker-compose run --rm --no-deps ${WEB_DOCKER_SERVICE} npm i $(dependency)
