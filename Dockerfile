@@ -19,6 +19,7 @@ WORKDIR /app
 # Copy the built artifacts from the builder stage
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 
 # Set the environment variables (if needed)
 ENV NODE_ENV=production

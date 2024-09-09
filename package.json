@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
+    "face-api.js": "^0.22.2",
     "next": "14.2.8",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-webcam": "^7.2.0"
   },
   "devDependencies": {
     "@types/node": "^20",
