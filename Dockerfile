@@ -8,6 +8,10 @@ RUN npm ci
 
 COPY . .
 
+ARG DATABASE_URL
+
+RUN npm run prisma-generate
+RUN npm run db-migrate-prod
 RUN npm run build
 
 # Production Stage
@@ -20,6 +24,7 @@ WORKDIR /app
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
+COPY --from=builder app/prisma ./prisma
 
 # Set the environment variables (if needed)
 ENV NODE_ENV=production
