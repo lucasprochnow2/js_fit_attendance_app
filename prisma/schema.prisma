@@ -9,18 +9,34 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
+  id    Int             @id @default(autoincrement())
+  email String          @unique
   name  String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
 
   @@map("user")
 }
 
 model Classroom {
-  id         Int      @id @default(autoincrement())
-  name       String
-  start_time DateTime @db.Time(6)
-  end_time   DateTime @db.Time(6)
+  id          Int       @id @default(autoincrement())
+  name        String
+  start_time  DateTime  @db.Time(6)
+  end_time    DateTime  @db.Time(6)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
 
   @@map("classroom")
+}
+
+model Presence {
+  id            Int       @id @default(autoincrement())
+  user_id       Int
+  classroom_id  Int
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@map("presence")
+  @@unique([user_id, classroom_id])
+  @@index([user_id, classroom_id])
 }

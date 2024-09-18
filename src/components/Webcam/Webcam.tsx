@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useRef, useCallback, useEffect, useState } from 'react';
+import React, {
+  useRef,
+  useCallback,
+  useEffect,
+  useState,
+  useContext,
+  useMemo,
+} from 'react';
 import Webcam from 'react-webcam';
 import {
   FaceMatcher,
@@ -16,29 +23,37 @@ import {
 } from 'face-api.js';
 import path from 'path';
 
-import create from '@/app/actions';
+import { savePresence } from '@/app/actions';
+import { AttendanceContext } from '@/context/AttendanceContext';
+import { Button } from '@/components/ui/button';
 
 const WebcamComponent: React.FC = () => {
   const [faceMatcher, setFaceMatcher] = useState<FaceMatcher | null>(null);
   const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
   const [isModelsLoading, setIsModelsLoading] = useState<boolean>(true);
+  const [presenceSaved, setPresenceSaved] = useState<string | null>(null);
+
+  const { currentClass } = useContext(AttendanceContext);
 
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const processImagesForRecognition = useCallback(async () => {
-    const labels = [
-      'outro',
-      'lucas2',
-      'gloria',
-      'angelera',
-      'dedezan',
-      'morrice',
-    ];
+  const labels = useMemo(
+    () => [
+      { id: 1, label: 'outro' },
+      { id: 2, label: 'lucas2' },
+      { id: 3, label: 'gloria' },
+      { id: 4, label: 'angelera' },
+      { id: 5, label: 'dedezan' },
+      { id: 6, label: 'morrice' },
+    ],
+    []
+  );
 
+  const processImagesForRecognition = useCallback(async () => {
     let labeledFaceDescriptors = [];
     labeledFaceDescriptors = await Promise.all(
-      labels.map(async (label) => {
+      labels.map(async ({ label }) => {
         const img = await fetchImage(`/images/${label}.jpg`);
         const faceDescription = await detectSingleFace(img)
           .withFaceLandmarks()
@@ -57,13 +72,13 @@ const WebcamComponent: React.FC = () => {
 
     setFaceMatcher(faceMatcher);
     setIsPageLoading(false);
-  }, []);
+  }, [labels]);
 
   const loadRecognizedFaces = useCallback(async () => {
     const video = webcamRef.current?.video;
     const canvas = canvasRef.current;
 
-    if (canvas && video && faceMatcher) {
+    if (canvas && video && faceMatcher && currentClass?.id) {
       video.width = 300;
       video.height = 250;
 
@@ -81,16 +96,28 @@ const WebcamComponent: React.FC = () => {
 
         if (result) {
           const { descriptor, detection } = result;
-          const bestMatch = faceMatcher.findBestMatch(descriptor);
           const drawBox = new draw.DrawBox(detection.box, {
-            label: bestMatch.toString(),
+            label: '',
           });
-
           drawBox.draw(canvas);
+
+          const bestMatch = faceMatcher.findBestMatch(descriptor);
+          const user = labels.find((label) => label.label === bestMatch.label);
+
+          if (user) {
+            const presResult = await savePresence({
+              userId: user.id,
+              classroomId: currentClass.id,
+            });
+            if (presResult) {
+              setPresenceSaved(user.label);
+              setInterval(() => setPresenceSaved(null), 5000);
+            }
+          }
         }
       }
     }
-  }, [faceMatcher]);
+  }, [faceMatcher, currentClass, labels]);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -115,11 +142,11 @@ const WebcamComponent: React.FC = () => {
     if (!isModelsLoading) processImagesForRecognition();
   }, [isModelsLoading, processImagesForRecognition]);
 
-  useEffect(() => {
-    if (faceMatcher) {
-      setInterval(loadRecognizedFaces, 1000);
-    }
-  }, [faceMatcher, loadRecognizedFaces]);
+  // useEffect(() => {
+  //   if (faceMatcher) {
+  //     setInterval(loadRecognizedFaces, 1000);
+  //   }
+  // }, [faceMatcher, loadRecognizedFaces]);
 
   return isPageLoading ? (
     <>Carregando página...</>
@@ -134,8 +161,10 @@ const WebcamComponent: React.FC = () => {
         ref={canvasRef}
         style={{ position: 'absolute', width: '300px', height: '250px' }}
       />
-
-      <button onClick={() => create()}>Criar aula</button>
+      {presenceSaved && <div>Presença salva {presenceSaved}!</div>}
+      {currentClass?.id && (
+        <Button onClick={() => loadRecognizedFaces()}>Salvar presença</Button>
+      )}
     </>
   );
 };

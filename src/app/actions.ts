@@ -1,14 +1,20 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { Prisma } from '@prisma/client'
 
-import prisma from '@/lib/prisma';
+import prismaClient from '@/lib/prisma';
 
-const create = async () => {
+interface SavePresenceArgs {
+  userId: number;
+  classroomId: number;
+}
+
+export const create = async () => {
   const startTime = new Date('2021-10-01T14:00:00');
   const endTime = new Date('2021-10-01T15:00:00');
 
-  const create = await prisma.classroom.create({
+  const create = await prismaClient.classroom.create({
     data: {
       name: 'Aula 3',
       start_time: startTime.toISOString(),
@@ -20,4 +26,22 @@ const create = async () => {
   revalidatePath('classes');
 };
 
-export default create;
+export const savePresence = async ({ userId, classroomId }: SavePresenceArgs) => {
+  try {
+    await prismaClient.presence.create({
+      data: {
+        user_id: userId,
+        classroom_id: classroomId,
+      },
+    });
+    return true;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return false;
+      }
+    }
+
+    console.log('--- erro inseperado', error);
+  }
+}
