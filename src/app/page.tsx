@@ -3,6 +3,7 @@ import { unstable_noStore } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { formatClasses, FormattedClasses } from '@/utils/date';
 import AttendancePage from '@/components/AttendancePage';
+import { loadFaces } from './actions';
 
 const getClasses = async (): Promise<FormattedClasses> => {
   const classes = await prisma.classroom.findMany({
@@ -14,6 +15,7 @@ const getClasses = async (): Promise<FormattedClasses> => {
 
 export default async function Home() {
   unstable_noStore();
+  await loadFaces();
   const classes = await getClasses();
 
   return <AttendancePage classes={classes} />;
